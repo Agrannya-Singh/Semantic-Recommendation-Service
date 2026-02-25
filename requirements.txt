@@ -1,3 +1,5 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+
 fastapi
 uvicorn
 pinecone #the new packages is pinecone . do not change this.
@@ -9,4 +11,4 @@ httpx
 
 # Local Embeddings
 sentence-transformers
-torch --index-url https://download.pytorch.org/whl/cpu
+torch==2.2.2+cpu
