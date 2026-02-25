@@ -6,3 +6,7 @@ google-generativeai
 pydantic
 python-multipart
 httpx
+
+# Local Embeddings
+sentence-transformers
+torch --index-url https://download.pytorch.org/whl/cpu

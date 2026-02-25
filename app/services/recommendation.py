@@ -6,6 +6,7 @@ from app.config import PINECONE_KEY, GEMINI_KEY
 from app.database import get_titles_from_ids, secure_poster_url
 from app.schemas import RecommendationRequest
 import logging
+from sentence_transformers import SentenceTransformer
 
 logger = logging.getLogger(__name__)
 
@@ -14,19 +15,21 @@ class RecommendationService:
         self.pc = None
         self.index = None
         self.chat_model = None
+        self.embed_model = None
         self.init_ai_services()
 
     def init_ai_services(self):
         try:
+            self.embed_model = SentenceTransformer('all-MiniLM-L6-v2')
             if PINECONE_KEY:
                 self.pc = Pinecone(api_key=PINECONE_KEY)
-                self.index = self.pc.Index("screenscout-google-v1") 
+                self.index = self.pc.Index("semantic-recommendation-service") 
                 logger.info("[Service] Connected to Pinecone.")
             
             if GEMINI_KEY:
                 genai.configure(api_key=GEMINI_KEY)
-                self.chat_model = genai.GenerativeModel('gemini-2.0-flash')
-                logger.info("[Service] Connected to Gemini (1.5-flash).")
+                self.chat_model = genai.GenerativeModel('gemini-3.0-flash')
+                logger.info("[Service] Connected to Gemini (3.0-flash).")
         except Exception as e:
             logger.error(f"[Service] Discovery Error: {e}")
 
@@ -39,14 +42,10 @@ class RecommendationService:
 
             # 2. EMBED
             try:
-                emb_response = genai.embed_content(
-                    model="models/text-embedding-004",
-                    content=augmented_query,
-                    task_type="retrieval_query"
-                )
-                query_vec = emb_response['embedding']
+                # Generate 384-dimension vector locally
+                query_vec = self.embed_model.encode(augmented_query, convert_to_numpy=True).tolist()
             except Exception as embed_err:
-                return {"error": f"GOOGLE EMBEDDING FAILED: {str(embed_err)}", "movies": []}
+                return {"error": f"EMBEDDING FAILED: {str(embed_err)}", "movies": []}
             
             # 3. SEARCH PINECONE
             try:
