@@ -33,6 +33,9 @@ COPY . .
 # Switch to non-root user
 USER appuser
 
+# Pre-download SentenceTransformer model to speed up Azure F1 cold starts
+RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
+
 # Expose the port
 EXPOSE 8000
 
