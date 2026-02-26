@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 # --- CONFIG ---
 # --- KEYS ---
-#add pinecone and gemini key here to work :)
+# Ensure Pinecone and Gemini API keys are configured in the environment.
 INDEX_NAME = "screenscout-google-v1"
 
 # 1. Setup Services
@@ -32,9 +32,9 @@ df = pd.read_csv("movies_metadata.csv", low_memory=False)
 df = df.dropna(subset=['overview', 'poster_path', 'title'])
 df = df[df['original_language'] == 'en']
 
-# --- CRITICAL FIX: Reset Index to avoid 'IndexError' ---
+# Reset DataFrame index to prevent sequence alignment issues during iteration
 df = df.reset_index(drop=True)
-print(f"Total Movies to Ingest: {len(df)}")
+print(f"Total movies to ingest: {len(df)}")
 
 # 4. Batch Processing Function
 BATCH_SIZE = 100  # Google allows up to 100-250 per call
@@ -50,7 +50,7 @@ def generate_embeddings_batch(texts):
 
 # 5. The Main Loop
 vectors_to_upsert = []
-print("Starting Batch Ingestion...")
+print("Starting batch ingestion...")
 
 # Iterate through the DataFrame in chunks of BATCH_SIZE
 for i in tqdm(range(0, len(df), BATCH_SIZE)):
@@ -80,12 +80,12 @@ for i in tqdm(range(0, len(df), BATCH_SIZE)):
         index.upsert(vectors_to_upsert)
         vectors_to_upsert = [] # Clear buffer
         
-        # Sleep slightly to be kind to the API
+        # Sleep to respect rate limits
         time.sleep(1)
 
     except Exception as e:
         print(f"Error in batch starting at {i}: {e}")
-        time.sleep(5) # Cool down if error occurs
+        time.sleep(5) # Delay before retry upon error
         continue
 
-print("Ingestion Complete! You survived the API limits.")
+print("Ingestion complete.")

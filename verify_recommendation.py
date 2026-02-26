@@ -9,7 +9,7 @@ sys.path.append(os.getcwd())
 from main import recommend_movies, RecommendationRequest
 
 async def test_recommendation_flow():
-    print("Testing /recommend endpoint with enhanced logic...")
+    print("Testing /recommend endpoint routing and reasoning structure...")
     
     # Create valid request
     req = RecommendationRequest(
@@ -56,7 +56,7 @@ if __name__ == "__main__":
     if not os.getenv("OMDB_API_KEY"):
          print("⚠️ OMDB_API_KEY not set. Please set it to run this test properly.")
     
-    # We also need keys for Pinecone/Gemini strictly speaking, assuming they are in env.
+    # Verify vector database and LLM credentials are present
     if not os.getenv("PINECONE_KEY") or not os.getenv("GOOGLE_API_KEY"):
         print("❌ Missing PINECONE_KEY or GOOGLE_API_KEY. Test will likely fail.")
 

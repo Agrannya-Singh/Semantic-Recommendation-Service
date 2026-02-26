@@ -39,8 +39,8 @@ graph TD
     end
 
     subgraph AI ["External AI Services"]
-        Embed[Google Gecko Embedding]
-        LLM[Gemini 2.0 Flash]
+        Embed[SentenceTransformers all-MiniLM-L6-v2]
+        LLM[Gemini 3.0 Flash Preview]
     end
 
     UI -->|JSON HTTP| API
@@ -88,12 +88,12 @@ The system constructs a "Composite Query" by combining the user's immediate prom
 
 ### Phase 2: Dual-Stage Retrieval
 
-1. **Embedding:** The augmented query is sent to Google's `text-embedding-004` model to generate a 768-dimension vector.
-2. **ANN Search:** This vector is queried against the Pinecone index with `top_k=40` to retrieve a broad set of candidates based on cosine similarity.
+1. **Embedding:** The augmented query is vectorized locally using `SentenceTransformers` (`all-MiniLM-L6-v2`) to generate a 384-dimension vector. This process is offloaded to a separate asynchronous thread to prevent Event Loop blocking.
+2. **ANN Search:** This vector is queried against the Pinecone index with `top_k=40` to retrieve candidates based on cosine similarity.
 
 ### Phase 3: Generative Reasoning
 
-The retrieved candidates are passed to the **Gemini 2.0 Flash** agent. The system injects these candidates into a strict prompt template, instructing the LLM to:
+The retrieved candidates are passed to the **Gemini 3.0 Flash Preview** agent via the unified `google-genai` SDK with `thinking_level=LOW` for rapid inference. The system injects these candidates into a strict prompt template, instructing the LLM to:
 
 1. Analyze the user's specific intent.
 2. Filter the top 5 matches from the retrieval set.

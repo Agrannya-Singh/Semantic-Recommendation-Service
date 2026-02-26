@@ -3,14 +3,14 @@
 ![ScreenScout Architecture](https://img.shields.io/badge/Architecture-Event--Driven-blueviolet)
 ![Status](https://img.shields.io/badge/Status-Production-success)
 ![Vector DB](https://img.shields.io/badge/Vector%20DB-Pinecone-green)
-![LLM](https://img.shields.io/badge/LLM-Gemini%201.5%20Flash-orange)
+![LLM](https://img.shields.io/badge/LLM-Gemini%203.0%20Flash-orange)
 
 frontend on:https://cinema-rag.vercel.app/
 
 ## Summary
 ScreenScout is a **cloud-native, semantic movie discovery engine** that moves beyond traditional keyword matching. Unlike standard collaborative filtering systems (which fail with cold-start users), ScreenScout utilizes **high-dimensional vector embeddings** to understand the *thematic essence* of a user's query.
 
-It features a **Retrieval-Augmented Generation (RAG)** pipeline where a Generative AI agent (Gemini 1.5 Flash) acts as a dynamic curator, explaining *why* a specific film matches the user's "vibe" in real-time.
+It features a **Retrieval-Augmented Generation (RAG)** pipeline where a Generative AI agent (Gemini 3.0 Flash) acts as a dynamic curator, explaining *why* a specific film matches the user's "vibe" in real-time.
 
 ---
 
@@ -28,8 +28,8 @@ graph TD
     API["FastAPI Backend (Render)"]
    
     subgraph Intelligence Layer
-        Embed["Google Gecko Embedding (text-embedding-004)"]
-        LLM["Gemini 1.5 Flash (Reasoning Agent)"]
+        Embed["Local Embeddings (all-MiniLM-L6-v2)"]
+        LLM["Gemini 3.0 Flash (Reasoning Agent)"]
     end
    
     subgraph Persistence Layer
@@ -65,8 +65,8 @@ graph TD
 | **Frontend** | **Next.js 14** (React) | Server-Side Rendering (SSR) for SEO and high-performance image loading (`next/image`). |
 | **Backend** | **FastAPI** (Python) | Asynchronous request handling (`async/await`) essential for non-blocking AI inference. |
 | **Vector DB** | **Pinecone (Serverless)** | Managed HNSW (Hierarchical Navigable Small World) index for O(log N) retrieval speed. |
-| **Embeddings** | **text-embedding-004** | Optimized for semantic textual similarity (STS) via Google GenAI. |
-| **LLM** | **Gemini 1.5 Flash** | Low-latency, high-throughput reasoning for real-time user explanations. |
+| **Embeddings** | **all-MiniLM-L6-v2** | Local semantic textual similarity (STS) via SentenceTransformers. |
+| **LLM** | **Gemini 3.0 Flash** | Low-latency, high-throughput reasoning integrated via `google-genai`. |
 | **Infrastructure** | **Docker & Render** | Containerized deployment via Debian Slim for stability. |
 
 ---

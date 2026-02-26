@@ -1,6 +1,9 @@
 from fastapi import APIRouter, Query, HTTPException
 from app.database import get_db_connection, secure_poster_url
 import sqlite3
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -40,5 +43,5 @@ def get_movies(page: int = Query(1, ge=1), limit: int = 1000):
             }
         }
     except Exception as e:
-        print(f"DB Error: {e}")
+        logger.error(f"Database Read Error: {e}")
         raise HTTPException(status_code=500, detail="Database Read Error")
