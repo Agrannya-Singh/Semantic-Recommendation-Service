@@ -57,7 +57,7 @@ if __name__ == "__main__":
          print("⚠️ OMDB_API_KEY not set. Please set it to run this test properly.")
     
     # We also need keys for Pinecone/Gemini strictly speaking, assuming they are in env.
-    if not os.getenv("PINECONE_KEY") or not os.getenv("GEMINI_KEY"):
-        print("❌ Missing PINECONE_KEY or GEMINI_KEY. Test will likely fail.")
+    if not os.getenv("PINECONE_KEY") or not os.getenv("GOOGLE_API_KEY"):
+        print("❌ Missing PINECONE_KEY or GOOGLE_API_KEY. Test will likely fail.")
 
     asyncio.run(test_recommendation_flow())

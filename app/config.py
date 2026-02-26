@@ -2,7 +2,7 @@ import os
 
 # --- 🔒 SECURE CREDENTIALS ---
 PINECONE_KEY = os.getenv("PINECONE_KEY")
-GEMINI_KEY = os.getenv("GEMINI_KEY")
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
 # --- PATHS ---
 # Assumes this config.py is inside app/, so we go up one level to root

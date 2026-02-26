@@ -144,7 +144,7 @@ Reads directly from the embedded `movies.db` SQLite database to showcase the ava
 2. **Set Credentials**
    ```bash
    export PINECONE_KEY="your_key"
-   export GEMINI_KEY="your_key"
+   export GOOGLE_API_KEY="your_key"
    ```
 
 3. **Run Server**
@@ -161,7 +161,7 @@ Reads directly from the embedded `movies.db` SQLite database to showcase the ava
 
 2. **Run Container**
    ```bash
-   docker run -p 8000:8000 -e PINECONE_KEY="..." -e GEMINI_KEY="..." screenscout-backend
+   docker run -p 8000:8000 -e PINECONE_KEY="..." -e GOOGLE_API_KEY="..." screenscout-backend
    ```
 
 ### **Testing**

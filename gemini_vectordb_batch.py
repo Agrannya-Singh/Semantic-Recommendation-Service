@@ -11,7 +11,7 @@ from tqdm import tqdm
 INDEX_NAME = "screenscout-google-v1"
 
 # 1. Setup Services
-genai.configure(api_key=GEMINI_KEY)
+genai.configure(api_key=GOOGLE_API_KEY)
 pc = Pinecone(api_key=PINECONE_KEY)
 
 # 2. Create Index (768 Dimensions for Google)

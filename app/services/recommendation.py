@@ -2,7 +2,7 @@ import traceback
 import json
 from pinecone import Pinecone
 import google.generativeai as genai
-from app.config import PINECONE_KEY, GEMINI_KEY
+from app.config import PINECONE_KEY, GOOGLE_API_KEY
 from app.database import get_titles_from_ids, secure_poster_url
 from app.schemas import RecommendationRequest
 import logging
@@ -26,8 +26,8 @@ class RecommendationService:
                 self.index = self.pc.Index("semantic-recommendation-service") 
                 logger.info("[Service] Connected to Pinecone.")
             
-            if GEMINI_KEY:
-                genai.configure(api_key=GEMINI_KEY)
+            if GOOGLE_API_KEY:
+                genai.configure(api_key=GOOGLE_API_KEY)
                 self.chat_model = genai.GenerativeModel('gemini-3.0-flash')
                 logger.info("[Service] Connected to Gemini (3.0-flash).")
         except Exception as e:
