@@ -5,7 +5,7 @@ import sqlite3
 router = APIRouter()
 
 @router.get("/movies")
-def get_movies(page: int = Query(1, ge=1), limit: int = Query(24, ge=1, le=100)):
+def get_movies(page: int = Query(1, ge=1), limit: int = Query(1000, ge=1, le=2000)):
     """Reads directly from the movies.db file for the homepage."""
     offset = (page - 1) * limit
 
