@@ -149,7 +149,7 @@ Reads directly from the embedded `movies.db` SQLite database to showcase the ava
 
 3. **Run Server**
    ```bash
-   uvicorn main:app --reload
+   uvicorn app.main:app --reload
    ```
 
 ### **Run with Docker**
