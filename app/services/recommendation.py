@@ -3,7 +3,8 @@ import traceback
 from fastapi import HTTPException
 import json
 from pinecone import Pinecone
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from app.config import PINECONE_KEY, GOOGLE_API_KEY
 from app.database import get_titles_from_ids, secure_poster_url
 from app.schemas import RecommendationRequest
@@ -16,7 +17,7 @@ class RecommendationService:
     def __init__(self):
         self.pc = None
         self.index = None
-        self.chat_model = None
+        self.chat_client = None
         self.embed_model = None
         self.init_ai_services()
 
@@ -29,9 +30,8 @@ class RecommendationService:
                 logger.info("[Service] Connected to Pinecone.")
             
             if GOOGLE_API_KEY:
-                genai.configure(api_key=GOOGLE_API_KEY)
-                self.chat_model = genai.GenerativeModel('gemini-3.0-flash')
-                logger.info("[Service] Connected to Gemini (3.0-flash).")
+                self.chat_client = genai.Client(api_key=GOOGLE_API_KEY)
+                logger.info("[Service] Connected to Gemini via google-genai.")
         except Exception as e:
             logger.error(f"[Service] Discovery Error: {e}")
 
@@ -87,7 +87,14 @@ class RecommendationService:
             
             ai_data = {}
             try:
-                response = self.chat_model.generate_content(prompt, generation_config={"response_mime_type": "application/json"})
+                response = self.chat_client.models.generate_content(
+                    model="gemini-3-flash-preview",
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        response_mime_type="application/json",
+                        thinking_config=types.ThinkingConfig(thinking_level=types.ThinkingLevel.LOW)
+                    )
+                )
                 ai_data = json.loads(response.text)
             except Exception as ai_err:
                  logger.error(f"AI Generation Error: {ai_err}")

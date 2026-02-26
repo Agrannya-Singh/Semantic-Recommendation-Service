@@ -4,7 +4,7 @@ fastapi
 uvicorn
 pinecone #the new packages is pinecone . do not change this.
 
-google-generativeai
+google-genai
 pydantic
 python-multipart
 httpx

@@ -1,5 +1,5 @@
 import pandas as pd
-import google.generativeai as genai
+from google import genai
 from pinecone import Pinecone, ServerlessSpec
 import time
 import os
@@ -11,7 +11,7 @@ from tqdm import tqdm
 INDEX_NAME = "screenscout-google-v1"
 
 # 1. Setup Services
-genai.configure(api_key=GOOGLE_API_KEY)
+client = genai.Client(api_key=GOOGLE_API_KEY)
 pc = Pinecone(api_key=PINECONE_KEY)
 
 # 2. Create Index (768 Dimensions for Google)
@@ -41,12 +41,12 @@ BATCH_SIZE = 100  # Google allows up to 100-250 per call
 
 def generate_embeddings_batch(texts):
     # Google API expects a list of strings
-    result = genai.embed_content(
-        model="models/text-embedding-004",
-        content=texts,
-        task_type="retrieval_document"
+    result = client.models.embed_content(
+        model="text-embedding-004",
+        contents=texts,
     )
-    return result['embedding']
+    # Extract the embeddings using the new type structure
+    return [e.values for e in result.embeddings]
 
 # 5. The Main Loop
 vectors_to_upsert = []
