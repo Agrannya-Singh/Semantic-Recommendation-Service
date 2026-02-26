@@ -1,4 +1,6 @@
+import asyncio
 import traceback
+from fastapi import HTTPException
 import json
 from pinecone import Pinecone
 import google.generativeai as genai
@@ -42,10 +44,11 @@ class RecommendationService:
 
             # 2. EMBED
             try:
-                # Generate 384-dimension vector locally
-                query_vec = self.embed_model.encode(augmented_query, convert_to_numpy=True).tolist()
+                # Generate 384-dimension vector locally (in a separate thread to avoid blocking)
+                query_vec = await asyncio.to_thread(self.embed_model.encode, augmented_query, convert_to_numpy=True)
+                query_vec = query_vec.tolist()
             except Exception as embed_err:
-                return {"error": f"EMBEDDING FAILED: {str(embed_err)}", "movies": []}
+                raise HTTPException(status_code=500, detail=f"EMBEDDING FAILED: {str(embed_err)}")
             
             # 3. SEARCH PINECONE
             try:
@@ -55,7 +58,7 @@ class RecommendationService:
                     include_metadata=True
                 )
             except Exception as pinecone_err:
-                 return {"error": f"PINECONE SEARCH FAILED: {str(pinecone_err)}", "movies": []}
+                 raise HTTPException(status_code=500, detail=f"PINECONE SEARCH FAILED: {str(pinecone_err)}")
 
             # 4. CHECK RESULTS
             if not results['matches']:
@@ -117,9 +120,11 @@ class RecommendationService:
                 "movies": final_movies
             }
 
+        except HTTPException:
+            raise # Re-raise HTTP exceptions
         except Exception as e:
             traceback.print_exc()
-            return {"error": f"SERVER ERROR: {str(e)}", "movies": []}
+            raise HTTPException(status_code=500, detail=f"SERVER ERROR: {str(e)}")
 
 # Singleton instance
 recommendation_service = RecommendationService()
