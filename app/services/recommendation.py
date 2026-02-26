@@ -6,9 +6,13 @@ from pinecone import Pinecone
 from google import genai
 from google.genai import types
 from app.config import PINECONE_KEY, GOOGLE_API_KEY
+import os
+import httpx
 from app.database import get_titles_from_ids, secure_poster_url
 from app.schemas import RecommendationRequest
 import logging
+
+OMDB_API_KEY = os.getenv("OMDB_API_KEY")
 from sentence_transformers import SentenceTransformer
 
 logger = logging.getLogger(__name__)
@@ -104,26 +108,69 @@ class RecommendationService:
                  }
 
             # 7. ASSEMBLE RESPONSE
-            final_movies = []
             target_ids = ai_data.get("movie_ids", [])
             if not target_ids: target_ids = [m['id'] for m in results['matches'][:5]]
+            
+            ai_reasonings = ai_data.get("reasoning", {})
 
-            for match in results['matches']:
-                if match['id'] in target_ids:
-                    m = match['metadata']
-                    # Use helper for consistent poster logic
-                    m = secure_poster_url(m)
-                    
-                    final_movies.append({
-                        "id": match['id'],
-                        "title": m.get('title'),
-                        "overview": m.get('overview'),
-                        "poster_url": m.get('poster_url'),
-                        "score": match['score']
-                    })
+            # Helper for OMDB
+            async def fetch_omdb_metadata(client: httpx.AsyncClient, title: str) -> dict:
+                if not OMDB_API_KEY: return {}
+                try:
+                    url = f"http://www.omdbapi.com/?t={title}&apikey={OMDB_API_KEY}"
+                    response = await client.get(url, timeout=5.0)
+                    if response.status_code == 200:
+                            data = response.json()
+                            if data.get("Response") == "True":
+                                return {
+                                    "poster_url": data.get("Poster"),
+                                    "year": data.get("Year"),
+                                    "rating": data.get("imdbRating")
+                                }
+                except Exception as e:
+                    logger.warning(f"OMDB Error for '{title}': {e}")
+                return {}
+
+            # Async enrichment for recommendations
+            async def process_recommendation(client, match):
+                m = match['metadata']
+                title = m.get('title')
+                
+                # Enrich with OMDB metadata
+                omdb_data = await fetch_omdb_metadata(client, title)
+                
+                # Update poster logic with OMDB fallback
+                movie_dict = {
+                    "poster_path": omdb_data.get("poster_url") or m.get('poster_path')
+                }
+                movie_dict = secure_poster_url(movie_dict)
+                
+                # Get reasoning
+                reasoning = ""
+                if isinstance(ai_reasonings, dict):
+                    reasoning = ai_reasonings.get(match['id'], "Recommended based on your preferences.")
+                else:
+                    reasoning = str(ai_reasonings)
+
+                return {
+                    "id": match['id'],
+                    "title": title,
+                    "overview": m.get('overview'),
+                    "poster_url": movie_dict.get("poster_url"),
+                    "score": match['score'],
+                    "year": omdb_data.get("year"),
+                    "imdb_rating": omdb_data.get("rating"),
+                    "reasoning": reasoning
+                }
+
+            selected_matches = [m for m in results['matches'] if m['id'] in target_ids]
+            
+            # Execute concurrently
+            async with httpx.AsyncClient() as client:
+                final_movies = await asyncio.gather(*(process_recommendation(client, m) for m in selected_matches))
             
             return {
-                "ai_reasoning": ai_data.get("reasoning"),
+                "ai_reasoning": "Here are my top selections for you.",
                 "movies": final_movies
             }
 
