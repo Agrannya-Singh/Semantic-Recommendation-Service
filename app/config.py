@@ -1,6 +1,6 @@
 import os
 
-# --- 🔒 SECURE CREDENTIALS ---
+# ---  CREDENTIALS ---
 PINECONE_KEY = os.getenv("PINECONE_KEY")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
