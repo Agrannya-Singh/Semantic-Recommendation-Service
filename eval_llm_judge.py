@@ -123,8 +123,16 @@ Return ONLY a JSON object matching this schema:
                 response_mime_type="application/json"
             )
         )
-        judge_data = json.loads(response.text)
-        return judge_data
+        raw_text = getattr(response, "text", None) if response else None
+        if raw_text:
+            cleaned = raw_text.strip()
+            if cleaned.startswith("```"):
+                cleaned = cleaned.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
+            judge_data = json.loads(cleaned)
+            return judge_data
+        else:
+            raise ValueError("Gemini Auditor API returned null or empty response text.")
+
     except Exception as e:
         logger.error(f"Gemini Judge Evaluation error: {e}")
         # Fallback evaluation structure if LLM call fails

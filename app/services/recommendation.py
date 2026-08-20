@@ -100,13 +100,21 @@ class RecommendationService:
                         thinking_config=types.ThinkingConfig(thinking_level=types.ThinkingLevel.LOW)
                     )
                 )
-                ai_data = json.loads(response.text)
+                raw_text = getattr(response, "text", None) if response else None
+                if raw_text:
+                    cleaned = raw_text.strip()
+                    if cleaned.startswith("```"):
+                        cleaned = cleaned.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
+                    ai_data = json.loads(cleaned)
+                else:
+                    raise ValueError("Gemini API returned null or empty response text.")
             except Exception as ai_err:
                  logger.error(f"AI Generation Error: {ai_err}")
                  ai_data = {
                      "reasoning": "Here are the most relevant movies from our database.",
                      "movie_ids": [m['id'] for m in results['matches'][:5]]
                  }
+
 
             # 7. ASSEMBLE RESPONSE
             target_ids = ai_data.get("movie_ids", [])
