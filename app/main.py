@@ -1,8 +1,10 @@
+import asyncio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.routers import movies, recommend
 from app.services.recommendation import recommendation_service
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
