@@ -92,22 +92,36 @@ class RecommendationService:
             
             ai_data = {}
             try:
-                response = self.chat_client.models.generate_content(
-                    model="gemini-3-flash-preview",
-                    contents=prompt,
-                    config=types.GenerateContentConfig(
-                        response_mime_type="application/json",
-                        thinking_config=types.ThinkingConfig(thinking_level=types.ThinkingLevel.LOW)
-                    )
-                )
-                raw_text = getattr(response, "text", None) if response else None
-                if raw_text:
-                    cleaned = raw_text.strip()
-                    if cleaned.startswith("```"):
-                        cleaned = cleaned.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
-                    ai_data = json.loads(cleaned)
-                else:
-                    raise ValueError("Gemini API returned null or empty response text.")
+                max_retries = 3
+                for attempt in range(1, max_retries + 1):
+                    try:
+                        response = self.chat_client.models.generate_content(
+                            model="gemini-3-flash-preview",
+                            contents=prompt,
+                            config=types.GenerateContentConfig(
+                                response_mime_type="application/json",
+                                thinking_config=types.ThinkingConfig(thinking_level=types.ThinkingLevel.LOW)
+                            )
+                        )
+                        raw_text = getattr(response, "text", None) if response else None
+                        if raw_text:
+                            cleaned = raw_text.strip()
+                            if cleaned.startswith("```"):
+                                cleaned = cleaned.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
+                            ai_data = json.loads(cleaned)
+                            break
+                        else:
+                            raise ValueError("Gemini API returned null or empty response text.")
+                    except Exception as retry_err:
+                        err_str = str(retry_err)
+                        is_retryable = "503" in err_str or "UNAVAILABLE" in err_str or "429" in err_str or "RESOURCE_EXHAUSTED" in err_str
+                        if is_retryable and attempt < max_retries:
+                            wait_secs = 2 ** attempt
+                            logger.warning(f"Gemini API transient error (attempt {attempt}/{max_retries}). Retrying in {wait_secs}s...")
+                            await asyncio.sleep(wait_secs)
+                            continue
+                        else:
+                            raise retry_err
             except Exception as ai_err:
                  logger.error(f"AI Generation Error: {ai_err}")
                  ai_data = {

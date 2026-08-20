@@ -28,12 +28,15 @@ jobs:
         with:
           python-version: '3.11'
           cache: 'pip'
+          cache-dependency-path: 'requirements.txt'
 
       - name: Create and Start virtual environment and Install dependencies
         run: |
           python -m venv antenv
           source antenv/bin/activate
-          pip install -r requirements.txt
+          pip install --upgrade pip
+          pip install --cache-dir ~/.cache/pip -r requirements.txt
+
 
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4

@@ -116,26 +116,38 @@ Return ONLY a JSON object matching this schema:
 """
 
     try:
-        response = client.models.generate_content(
-            model="gemini-3-flash-preview",
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json"
-            )
-        )
-        raw_text = getattr(response, "text", None) if response else None
-        if raw_text:
-            cleaned = raw_text.strip()
-            if cleaned.startswith("```"):
-                cleaned = cleaned.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
-            judge_data = json.loads(cleaned)
-            return judge_data
-        else:
-            raise ValueError("Gemini Auditor API returned null or empty response text.")
-
+        max_retries = 3
+        for attempt in range(1, max_retries + 1):
+            try:
+                response = client.models.generate_content(
+                    model="gemini-3-flash-preview",
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        response_mime_type="application/json"
+                    )
+                )
+                raw_text = getattr(response, "text", None) if response else None
+                if raw_text:
+                    cleaned = raw_text.strip()
+                    if cleaned.startswith("```"):
+                        cleaned = cleaned.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
+                    judge_data = json.loads(cleaned)
+                    return judge_data
+                else:
+                    raise ValueError("Gemini Auditor API returned null or empty response text.")
+            except Exception as retry_err:
+                err_str = str(retry_err)
+                is_retryable = "503" in err_str or "UNAVAILABLE" in err_str or "429" in err_str or "RESOURCE_EXHAUSTED" in err_str
+                if is_retryable and attempt < max_retries:
+                    wait_secs = 2 ** attempt  # 2s, 4s, 8s
+                    logger.warning(f"Gemini API transient error (attempt {attempt}/{max_retries}): {retry_err}. Retrying in {wait_secs}s...")
+                    await asyncio.sleep(wait_secs)
+                    continue
+                else:
+                    raise retry_err
     except Exception as e:
         logger.error(f"Gemini Judge Evaluation error: {e}")
-        # Fallback evaluation structure if LLM call fails
+        # Fallback evaluation structure if LLM call fails after all retries
         evals = []
         for idx, m in enumerate(retrieved_movies, 1):
             evals.append({
@@ -277,9 +289,9 @@ async def run_evaluation(num_samples: int = 5, output_file: str = "eval_report.j
 
     # 2. Persist in Pinecone Metadata (Cloud Persistent - Survives container resets)
     try:
-        from app.services.recommendation import recommendation_service
         from datetime import datetime, timezone
         if recommendation_service.index:
+
             recommendation_service.index.upsert(
                 vectors=[{
                     "id": "sys_audit_latest",
