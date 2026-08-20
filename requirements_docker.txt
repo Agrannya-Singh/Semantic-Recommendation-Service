@@ -1,14 +1,14 @@
 --extra-index-url https://download.pytorch.org/whl/cpu
 
-fastapi==0.136.1
-uvicorn==0.27.0
+fastapi==0.136.0
+uvicorn==0.47.0
 pinecone==8.1.2
 google-genai
-pydantic==2.6.0
+pydantic==2.13.4
 python-multipart
 
 # Local Embeddings
 sentence-transformers
 transformers<5.6.0
-torch==2.2.2+cpu
+torch==2.12.0+cpu
 numpy<2.0.0
