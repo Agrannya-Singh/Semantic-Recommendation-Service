@@ -22,7 +22,9 @@ async def lifespan(app: FastAPI):
                 meta = res.vectors["sys_audit_latest"].metadata
                 logger.info(
                     f"[AUDIT LOG - Pinecone Cloud] Timestamp={meta.get('timestamp')} | "
-                    f"Precision={meta.get('mean_precision_pct')}% | "
+                    f"HybridAccuracy={meta.get('hybrid_accuracy_pct')}% | "
+                    f"VectorPrec={meta.get('vector_precision_pct')}% | "
+                    f"LLMPrec={meta.get('mean_precision_pct')}% | "
                     f"Relevance={meta.get('mean_relevance_score')}/5.00 | "
                     f"HitRate={meta.get('hit_rate_pct')}%"
                 )
@@ -43,6 +45,7 @@ async def lifespan(app: FastAPI):
                 )
         except Exception:
             pass
+
     # Trigger non-blocking evaluation task in the background
     async def run_background_eval():
         try:

@@ -286,6 +286,8 @@ async def run_evaluation(num_samples: int = 5, output_file: str = "eval_report.j
                     "values": [0.0] * 384,
                     "metadata": {
                         "num_samples": n,
+                        "hybrid_accuracy_pct": hybrid_accuracy,
+                        "vector_precision_pct": round(mean_vector_prec, 2),
                         "mean_precision_pct": round(mean_precision, 2),
                         "mean_relevance_score": round(mean_relevance, 2),
                         "hit_rate_pct": round(hit_rate, 2),
@@ -295,6 +297,7 @@ async def run_evaluation(num_samples: int = 5, output_file: str = "eval_report.j
                 namespace="audit_logs"
             )
             print("🌲 Persisted audit metrics into Pinecone cloud metadata (namespace='audit_logs').")
+
     except Exception as e:
         print(f"⚠️ Pinecone Metadata Upsert warning: {e}")
 
