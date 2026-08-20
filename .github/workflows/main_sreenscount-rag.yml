@@ -9,7 +9,12 @@ on:
       - main
   workflow_dispatch:
 
+concurrency:
+  group: azure-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
+
   build:
     runs-on: ubuntu-latest
     permissions:
