@@ -6,9 +6,11 @@ pinecone==8.1.2
 google-genai
 pydantic==2.13.4
 python-multipart
+httpx
 
 # Local Embeddings
 sentence-transformers
 transformers<5.6.0
-torch==2.12.0+cpu
+torch==2.4.1+cpu
 numpy<2.0.0
+
