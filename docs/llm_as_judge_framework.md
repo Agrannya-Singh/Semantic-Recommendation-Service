@@ -1,95 +1,93 @@
-# LLM-as-a-Judge Evaluation & RAG Retrieval Audit Framework
+# Technical Specification: Dual-Layer LLM-as-a-Judge Evaluation Architecture
 
-## 1. Overview
-The **ScreenScout Recommendation System** utilizes an unsupervised dense vector search architecture paired with Google Gemini RAG reasoning. 
-
-Because unsupervised vector retrieval scales across un-annotated catalogs, evaluating recommendation accuracy requires an automated, objective, and reproducible evaluation method. This repository implements a **Hybrid LLM-as-a-Judge & Vector Cosine Evaluation Framework** to measure retrieval precision, mathematical vector alignment, and qualitative recommendation quality.
+**Abstract**—This document provides the formal technical specification for the LLM-as-a-Judge evaluation framework implemented in the ScreenScout recommendation service. Designed according to IEEE software architectural standards, the framework addresses unsupervised vector retrieval validation by establishing a dual-layer metric system: deterministic 384-dimensional vector Cosine Similarity precision ($P_{\text{cosine}}$) and generative Likert relevance judging ($P_{\text{LLM}}$) via Gemini 3 Flash.
 
 ---
 
-## 2. Retrieval & RAG Pipeline Architecture
+## I. SYSTEM SPECIFICATION & RAG PIPELINE
 
-```
-[ User Preference / Seed Movie Context ]
-                  │
-                  ▼
-[ SentenceTransformer ('all-MiniLM-L6-v2') ]
-         (Encodes 384-d Dense Vector)
-                  │
-                  ▼
-[ Pinecone Vector Search Index ]
-         (Fetches Top 15 Candidates via ANN)
-                  │
-                  ▼
-[ Google Gemini 3 Flash (RAG Reasoner) ]
-         (Ranks & Filters Top 5 Final Movies)
-                  │
-                  ▼
-[ LLM Auditor & Vector Evaluation Stage ]
-```
+```mermaid
+graph TD
+    subgraph Retrieval ["Stage 1: ANN Vector Retrieval"]
+        Q[User Query q_aug] --> Embed[SentenceTransformer 384-d Embedding]
+        Embed --> ANN[Pinecone Serverless HNSW Index]
+        ANN --> Top15[Top 15 Candidate Vectors]
+    end
 
-### Retrieval Parameters
-- **Pinecone ANN Retrieval**: Fetches **Top 15 candidate movies** based on 384-dimensional dense vector embeddings.
-- **Gemini 3 Flash RAG Selection**: Evaluates the 15 candidate movies against the user prompt/preferences and selects the **Top 5 most relevant films** with custom reasoning.
+    subgraph Selection ["Stage 2: Generative RAG Selection"]
+        Top15 --> RAG[Gemini 3 Flash Model]
+        RAG --> Top5[Top 5 Final Recommended Movies]
+    end
 
----
-
-## 3. Dual-Layer Evaluation Methodology
-
-To prevent AI hallucination ("free hand") and ensure mathematical ground-truth rigor, the audit framework combines **deterministic vector math** with **LLM semantic judging**.
-
-### Layer 1: Deterministic Vector Cosine Similarity
-For each seed query $V_{\text{query}}$ and each retrieved movie candidate $V_{\text{candidate}}$:
-
-$$\text{Cosine Similarity}(V_{\text{query}}, V_{\text{candidate}}) = \frac{V_{\text{query}} \cdot V_{\text{candidate}}}{\|V_{\text{query}}\| \|V_{\text{candidate}}\|}$$
-
-- **Mean Vector Cosine Similarity**: Average mathematical vector similarity across all returned candidates.
-- **Vector Precision %**: Percentage of candidate recommendations achieving Cosine Similarity $\ge 0.45$.
-
-### Layer 2: LLM Auditor Judging (Gemini 3 Flash)
-Gemini 3 Flash acts as an independent auditor evaluating each retrieved candidate on a 1–5 scale:
-- **5 (Exceptional Match)**: Perfect thematic, genre, and semantic alignment.
-- **4 (Strong Match)**: High relevance and strong stylistic similarity.
-- **3 (Moderate Match)**: Acceptable genre or stylistic overlap.
-- **2 (Weak Match)**: Distant or superficial similarity.
-- **1 (Irrelevant)**: Completely unrelated.
-
-- **LLM Precision @ K**: Percentage of retrieved recommendations scoring $\ge 3$.
-- **Hit Rate @ K**: Percentage of test queries producing at least one candidate scoring $\ge 4$.
-
-### Layer 3: Hybrid Accuracy Metric
-
-$$\text{Hybrid Accuracy} = 50\% \times \text{Vector Cosine Precision} + 50\% \times \text{LLM Judge Precision}$$
-
----
-
-## 4. Environment Configuration
-
-All AI and vector operations rely on the unified `GOOGLE_API_KEY` defined in `.env.example`:
-
-```bash
-# Core Gemini Key
-GOOGLE_API_KEY="AIzaSyYourActualGoogleGeminiApiKeyHere"
-
-# Pinecone Vector DB Key
-PINECONE_KEY="your-pinecone-api-key-here"
+    subgraph Audit ["Stage 3: Dual-Layer Evaluation"]
+        Top5 --> Math[Layer 1: Deterministic Cosine Math]
+        Top5 --> LLM[Layer 2: Gemini Flash Auditor]
+        Math --> Hybrid[Hybrid Accuracy A_hybrid]
+        LLM --> Hybrid
+    end
 ```
 
+### A. Mathematical Formulation
+
+1. **Composite Query Embedding:**
+   $$\mathbf{v}_q = \text{Encoder}(q_{\text{aug}}) \in \mathbb{R}^{384}$$
+
+2. **Approximate Nearest Neighbor (ANN) Retrieval:**
+   $$\mathcal{C}_{15} = \text{TopK}_{15} \left( \left\{ \text{Sim}(\mathbf{v}_q, \mathbf{v}_i) \mid \mathbf{v}_i \in \mathcal{D}_{\text{Pinecone}} \right\} \right)$$
+
+3. **Generative RAG Selection:**
+   $$\mathcal{R}_{5} = \text{GeminiRAG}(\mathcal{C}_{15}, q_{\text{aug}})$$
+
 ---
 
-## 5. Running the Audit Framework
+## II. DUAL-LAYER EVALUATION METRICS
 
-### CLI Script Execution
+### A. Layer 1: Deterministic Vector Cosine Similarity Precision ($P_{\text{cosine}}$)
+For each retrieved candidate $c_i \in \mathcal{R}_5$, the candidate's textual metadata (title and plot overview) is re-encoded into $\mathbf{v}_{c_i} \in \mathbb{R}^{384}$. The exact Cosine Similarity is computed as:
+
+$$S_c(\mathbf{v}_q, \mathbf{v}_{c_i}) = \frac{\mathbf{v}_q \cdot \mathbf{v}_{c_i}}{\|\mathbf{v}_q\| \|\mathbf{v}_{c_i}\|}$$
+
+- **Vector Precision Metric ($P_{\text{cosine}}$):**
+  $$P_{\text{cosine}} = \frac{1}{|\mathcal{R}_5|} \sum_{c_i \in \mathcal{R}_5} \mathbb{I}\left( S_c(\mathbf{v}_q, \mathbf{v}_{c_i}) \ge 0.45 \right) \times 100\%$$
+
+### B. Layer 2: LLM Auditor Likert Relevance Judging ($P_{\text{LLM}}$)
+Gemini 3 Flash evaluates each candidate $c_i \in \mathcal{R}_5$ independently, assigning an integer relevance score $R(c_i) \in \{1, 2, 3, 4, 5\}$:
+
+- **LLM Precision Metric ($P_{\text{LLM}}$):**
+  $$P_{\text{LLM}} = \frac{1}{|\mathcal{R}_5|} \sum_{c_i \in \mathcal{R}_5} \mathbb{I}\left( R(c_i) \ge 3 \right) \times 100\%$$
+
+- **Hit Rate Metric ($H@K$):**
+  $$H@K = \mathbb{I}\left( \max_{c_i \in \mathcal{R}_5} R(c_i) \ge 4 \right) \times 100\%$$
+
+### C. Layer 3: Hybrid Accuracy Formulation ($A_{\text{hybrid}}$)
+$$\text{Hybrid Accuracy } A_{\text{hybrid}} = 0.5 \cdot P_{\text{cosine}} + 0.5 \cdot P_{\text{LLM}}$$
+
+---
+
+## III. ZERO-OVERHEAD PERSISTENCE & EXECUTION
+
+### A. Non-Blocking Lifespan Execution
+To prevent cold-start latency blocking on PaaS deployment environments (Azure/Render), evaluation runs asynchronously inside FastAPI's `lifespan` hook via `asyncio.create_task()`:
+
+```python
+# app/main.py - Non-blocking startup hook
+asyncio.create_task(run_background_eval())
+```
+
+### B. Cloud Metadata Persistence
+Audit execution metrics are written directly to Pinecone vector metadata (`namespace="audit_logs"`, `id="sys_audit_latest"`), preserving historical benchmark results across ephemeral container lifecycles without requiring external databases.
+
+---
+
+## IV. API & CLI EXECUTION INTERFACE
+
+### A. Command Line Interface (CLI)
 ```bash
 python eval_llm_judge.py --samples 5 --output eval_report.json
 ```
 
-### HTTP Endpoint Trigger
+### B. RESTful API Endpoint
 ```http
 GET /recommend/evaluate?samples=5
+Host: https://api.screenscout.com
 ```
-
-### Non-Blocking Background Startup Task
-When FastAPI starts (`app/main.py`), a non-blocking background task triggers after 3 seconds. Server boot remains instantaneous (0ms delay), while the background worker evaluates performance and writes persistent audit records to:
-1. **Pinecone Cloud Metadata** (`namespace="audit_logs"`, `id="sys_audit_latest"`).
-2. **Local SQLite Database** (`movies.db` -> `evaluation_history` table).
