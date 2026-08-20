@@ -58,11 +58,12 @@ class RecommendationService:
             try:
                 results = self.index.query(
                     vector=query_vec, 
-                    top_k=40,
+                    top_k=15,
                     include_metadata=True
                 )
             except Exception as pinecone_err:
                  raise HTTPException(status_code=500, detail=f"PINECONE SEARCH FAILED: {str(pinecone_err)}")
+
 
             # 4. CHECK RESULTS
             if not results['matches']:
