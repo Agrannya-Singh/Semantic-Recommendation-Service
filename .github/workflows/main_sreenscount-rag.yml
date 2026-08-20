@@ -18,15 +18,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python 3.11 with Pip Caching
+      - name: Set up Python version
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
 
-      - name: Install dependencies
+      - name: Create and Start virtual environment and Install dependencies
         run: |
-          python -m pip install --upgrade pip
+          python -m venv antenv
+          source antenv/bin/activate
           pip install -r requirements.txt
 
       - name: Upload artifact for deployment jobs
@@ -35,11 +36,7 @@ jobs:
           name: python-app
           path: |
             .
-            !.git/
-            !.github/
-            !__pycache__/
-            !**/__pycache__/
-            !docs/
+            !antenv/
 
   deploy:
     runs-on: ubuntu-latest
